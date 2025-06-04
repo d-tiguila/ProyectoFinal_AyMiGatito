@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+</head>
+<body>
+    <canvas class="webgl"></canvas>
+  
+    <!-- Scoreboard Cat 1 -->
+    <div class="score-container score-cat1">
+      <img src="/Images/cat1.jpg" alt="Cat 1" class="score-avatar" />
+      <span id="scoreCat1">0</span>
+    </div>
+  
+    <!-- Scoreboard Cat 2 -->
+    <div class="score-container score-cat2">
+      <img src="/Images/cat2.jpg" alt="Cat 2" class="score-avatar" />
+      <span id="scoreCat2">0</span>
+    </div>
+    <div id="startScreen">
+        <button id="startButton">START GAME</button>
+      </div>
+      
+  
+    <script type="module" src="./script.js"></script>
+  </body>
+  
+</html>

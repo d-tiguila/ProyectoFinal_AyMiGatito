@@ -1,0 +1,114 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+}
+
+.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+    
+}
+
+.score-popup {
+    font-family: "Pixelify Sans", sans-serif;
+    position: absolute;
+    color: orange;
+    font-size: 28px;
+    font-weight: bold;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    z-index: 1000;
+
+  }
+
+  .score-container {
+    position: fixed;
+    display: flex;
+    align-items: center;
+    font-family: "Pixelify Sans", sans-serif;
+    font-size: 40px;
+    /* background: white; */
+    padding: 8px;
+    border-radius: 6px;
+    z-index: 10;
+    gap: 10px;
+    color: #ffffff;
+    font-weight: bold;
+    text-shadow: 0 0 4px #FFD700, 0 0 8px #FFEB3B;
+  }
+  
+  .score-avatar {
+    width: 64px;
+    height: 64px;
+    margin-right: 10px;
+    image-rendering: pixelated;
+    border: 4px solid yellow;
+  }
+  
+  /* Positioning */
+  .score-cat1 {
+    top: 20px;
+    left: 20px;
+  }
+  
+  .score-cat2 {
+    top: 20px;
+    right: 20px;
+    flex-direction: row-reverse;
+  }
+  
+  .score-cat1 span {
+    margin-left: -7px;
+  }
+  
+ 
+  
+  #startScreen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('/Images/Fondo.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+    overflow: hidden;
+  }
+  
+
+  
+  #startButton {
+    font-family: "Pixelify Sans", sans-serif;
+    font-size: 36px;
+    padding: 20px 50px;
+    background: #FFD700;
+    color: rgb(255, 255, 255);
+    border: 4px solid white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    text-shadow: 0 0 2px #ffffff, 0 0 2px #ffffff;
+    z-index: 999;
+    
+  }
+  
+  #startButton:hover {
+    transform: scale(1.06);
+  }
+    
