@@ -21,6 +21,10 @@ let catGroup1, catGroup2
 let scoreCat1 = 0
 let scoreCat2 = 0
 let scoreDisplayCat1, scoreDisplayCat2
+let timeRemaining = 90 // in seconds
+let timerInterval = null
+let gameEnded = false
+
 
 
 
@@ -388,6 +392,8 @@ scene.add(camera)
 
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
+controls.enableZoom = false
+
 
 // Crear sombras falsas  para los gatos
 function createStatusShadow(color = 0xff0000) {
@@ -459,7 +465,7 @@ composer.addPass(renderPass)
 const pixelPass = new ShaderPass(PixelShader)
 pixelPass.uniforms['resolution'].value = new THREE.Vector2(window.innerWidth, window.innerHeight)
 pixelPass.uniforms['resolution'].value.multiplyScalar(window.devicePixelRatio)
-pixelPass.uniforms['pixelSize'].value = 2.5 // 🔧 adjust this for style (e.g. 2–8)
+pixelPass.uniforms['pixelSize'].value = 3 
 
 
 composer.addPass(pixelPass)
@@ -579,8 +585,8 @@ catGroup1.add(pivot1)
     catBoxBody.updateMassProperties()
 
     catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.4, 0.1, 0.665)), new CANNON.Vec3(0, 0.05, 1.08))
-    catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.05, 0.435, 0.665)), new CANNON.Vec3(-0.39, 0.435, 1.08))
-    catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.05, 0.435, 0.665)), new CANNON.Vec3(0.39, 0.435, 1.08))
+    catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.15, 0.435, 0.665)), new CANNON.Vec3(-0.49, 0.435, 1.08))
+    catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.15, 0.435, 0.665)), new CANNON.Vec3(0.49, 0.435, 1.08))
     catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.4, 0.435, 0.05)), new CANNON.Vec3(0, 0.435, 0.47))
     catBoxBody.addShape(new CANNON.Box(new CANNON.Vec3(0.4, 0.435, 0.05)), new CANNON.Vec3(0, 0.435, 1.7))
 
@@ -638,8 +644,8 @@ catBoxBody2.position.set(2, 0.05, 0) // igual que catBoxBody
 catBoxBody2.fixedRotation = true
 catBoxBody2.updateMassProperties()
     catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.4, 0.1, 0.665)), new CANNON.Vec3(0, 0.05, 1.08))
-    catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.05, 0.435, 0.665)), new CANNON.Vec3(-0.39, 0.435, 1.08))
-    catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.05, 0.435, 0.665)), new CANNON.Vec3(0.39, 0.435, 1.08))
+    catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.15, 0.435, 0.665)), new CANNON.Vec3(-0.49, 0.435, 1.08))
+    catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.15, 0.435, 0.665)), new CANNON.Vec3(0.49, 0.435, 1.08))
     catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.4, 0.435, 0.05)), new CANNON.Vec3(0, 0.435, 0.47))
     catBoxBody2.addShape(new CANNON.Box(new CANNON.Vec3(0.4, 0.435, 0.05)), new CANNON.Vec3(0, 0.435, 1.7))
     
@@ -710,12 +716,14 @@ const clock = new THREE.Clock()
 let oldElapsedTime = 0
 
 const tick = () => {
+    if (gameEnded) return
+
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - oldElapsedTime
     oldElapsedTime = elapsedTime
 
     // 1. Actualizar físicas
-    world.step(1 / 60, deltaTime, 10)
+    world.step(1 / 60, deltaTime, 6)
     for (const { mesh, body, fakeShadow } of objectsToUpdate) {
         mesh.position.copy(body.position)
         mesh.quaternion.copy(body.quaternion)
@@ -934,16 +942,65 @@ function startRandomBoxSpawner() {
     spawnBox()
 }
 
+function startTimer() {
+    const timerDisplay = document.getElementById('timer')
+    timerDisplay.textContent = `⏱ ${timeRemaining}`
+  
+    timerInterval = setInterval(() => {
+      timeRemaining--
+      timerDisplay.textContent = `⏱ ${timeRemaining}`
+  
+      if (timeRemaining <= 0) {
+        endGame()
+      }
+    }, 1000)
+  }
+  
 function startGame() {
     startRandomBoxSpawner()
     tick()
+    startTimer()
     if (backgroundSound.buffer && !backgroundSound.isPlaying) {
         backgroundSound.play()
     }
 }
 
+// End game
+function endGame() {
+    clearInterval(timerInterval)
+    gameEnded = true
+  
+    // Stop cat movement
+    catBoxBody.velocity.set(0, 0, 0)
+    catBoxBody2.velocity.set(0, 0, 0)
+  
+    // Show final score
+    document.getElementById('finalScore1').textContent = scoreCat1
+    document.getElementById('finalScore2').textContent = scoreCat2
+  
+    // Show end screen
+    document.getElementById('endScreen').style.display = 'flex'
+  }
+  
+  
+  window.addEventListener('wheel', (event) => {
+    if (!backgroundSound || !backgroundSound.isPlaying) return
+  
+    const delta = event.deltaY * -0.001
+    let currentVolume = backgroundSound.getVolume()
+    let newVolume = THREE.MathUtils.clamp(currentVolume + delta, 0, 1)
+  
+    backgroundSound.setVolume(newVolume)
+    console.log('🔊 Volume:', newVolume.toFixed(2))
+  })
+  
 
 document.getElementById('startButton').addEventListener('click', () => {
     document.getElementById('startScreen').style.display = 'none'
     startGame()
 })
+
+document.getElementById('restartButton').addEventListener('click', () => {
+    location.reload() // simple way to restart everything
+  })
+  
