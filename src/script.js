@@ -952,14 +952,19 @@ function endGame() {
   
   window.addEventListener('wheel', (event) => {
     if (!backgroundSound || !backgroundSound.isPlaying) return
-  
+
     const delta = event.deltaY * +0.001
     let currentVolume = backgroundSound.getVolume()
     let newVolume = THREE.MathUtils.clamp(currentVolume + delta, 0, 1)
-  
+
     backgroundSound.setVolume(newVolume)
+
+    const volumeDisplay = document.getElementById('volumeDisplay')
+    volumeDisplay.textContent = `Volume: ${(newVolume * 100).toFixed(0)}%`
+
     console.log('🔊 Volume:', newVolume.toFixed(2))
-  })
+})
+
   
 
 document.getElementById('startButton').addEventListener('click', () => {
