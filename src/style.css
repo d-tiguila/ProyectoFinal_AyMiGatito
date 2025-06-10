@@ -188,5 +188,24 @@ body
     border: 4px solid #FFD700;
     image-rendering: pixelated;
   }
+
+  #startContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #instructions {
+    color: white;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 40px;
+    text-align: center;
+    max-width: 300px;
+    line-height: 2; 
+  }
+  
   
     

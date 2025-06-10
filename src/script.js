@@ -12,8 +12,6 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 
 
 
-
-
 let catBoxBody
 let catBoxBody2
 let statusShadowCat1, statusShadowCat2
@@ -222,44 +220,6 @@ scene.background = new THREE.Color(0xb8f0ff)
 
 //  Peces callendo
 
-function createVisualBox(color = 0xff0000) {
-    const group = new THREE.Group()
-    
-
-    const material = new THREE.MeshStandardMaterial({
-        color,
-        roughness: 1,
-        metalness: 0,
-        side: THREE.DoubleSide,
-    })
-
-    ///// definir cajas visibles para prueba//////
-    const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 1.33), material)
-    base.position.set(0, 0, 1.08)
-    group.add(base)
-
-    const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.87, 1.33), material)
-    wallLeft.position.set(-0.39, 0.2, 1.08)
-    group.add(wallLeft)
-
-    const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.87, 1.33), material)
-    wallRight.position.set(0.39, 0.2, 1.08)
-    group.add(wallRight)
-
-    const wallBack = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.87, 0.1), material)
-    wallBack.position.set(0, 0.2, 0.47)
-    group.add(wallBack)
-
-    const wallFront = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.97, 0.1), material)
-    wallFront.position.set(0, 0.2, 1.7)
-group.add(wallFront)
-
-
- 
-
-    scene.add(group)
-    return group
-}
 
 
 
@@ -578,7 +538,7 @@ catGroup1.add(pivot1)
     statusShadowCat1.lastCatchTime = null
 
 // debug box visible
-    //catVisualBox = createVisualBox(0xff0000)
+
 
     catBoxBody = new CANNON.Body({ mass: 1, material: defaultMaterial })
     catBoxBody.fixedRotation = true
@@ -636,7 +596,6 @@ gltfLoader2.load('/Models/Cat2_v1.glb', (gltf) => {
 
 
     //  debug Caja visible
-    //catVisualBox2 = createVisualBox(0x0000ff)
 
     // Física de la caja
 catBoxBody2 = new CANNON.Body({ mass: 1, material: defaultMaterial })
@@ -723,7 +682,7 @@ const tick = () => {
     oldElapsedTime = elapsedTime
 
     // 1. Actualizar físicas
-    world.step(1 / 60, deltaTime, 6)
+    world.step(1 / 60, deltaTime,7)
     for (const { mesh, body, fakeShadow } of objectsToUpdate) {
         mesh.position.copy(body.position)
         mesh.quaternion.copy(body.quaternion)
@@ -917,11 +876,19 @@ if (catGroup2 && statusShadowCat2 && catBoxBody2) {
     // 4. Render y update
     controls.update()
     composer.render()
+    //renderer.render(scene, camera) 
   
 
     // update scores
     document.getElementById('scoreCat1').textContent = scoreCat1
     document.getElementById('scoreCat2').textContent = scoreCat2
+
+    const info = renderer.info
+
+    console.log(`🧱 Geometries: ${info.memory.geometries}`)
+    console.log(`🎨 Textures: ${info.memory.textures}`)
+    console.log(`🔺 Triangles: ${info.render.triangles}`)
+    
 
     requestAnimationFrame(tick)
 }
@@ -986,7 +953,7 @@ function endGame() {
   window.addEventListener('wheel', (event) => {
     if (!backgroundSound || !backgroundSound.isPlaying) return
   
-    const delta = event.deltaY * -0.001
+    const delta = event.deltaY * +0.001
     let currentVolume = backgroundSound.getVolume()
     let newVolume = THREE.MathUtils.clamp(currentVolume + delta, 0, 1)
   
