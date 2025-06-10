@@ -23,6 +23,9 @@ let scoreDisplayCat1, scoreDisplayCat2
 let timeRemaining = 90 // in seconds
 let timerInterval = null
 let gameEnded = false
+const fenceBodies = []
+//const fenceMeshes = []
+
 
 
 
@@ -318,6 +321,8 @@ window.addEventListener('resize', () => {
     camera.top = zoom / 2
     camera.bottom = -zoom / 2
     camera.updateProjectionMatrix()
+    rebuildFences(camera)
+
 
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -343,11 +348,124 @@ const camera = new THREE.OrthographicCamera(
     100
 )
 
+// Add barrier 
+
+function getGroundViewBounds(camera) {
+    const cornersNDC = [
+        new THREE.Vector2(-1, -1),
+        new THREE.Vector2(1, -1),
+        new THREE.Vector2(1, 1),
+        new THREE.Vector2(-1, 1)
+    ]
+
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0) // y=0 floor
+    const groundPoints = cornersNDC.map(ndc => {
+        const raycaster = new THREE.Raycaster()
+        raycaster.setFromCamera(ndc, camera)
+        const point = new THREE.Vector3()
+        raycaster.ray.intersectPlane(plane, point)
+        return point
+    })
+
+    const xs = groundPoints.map(p => p.x)
+    const zs = groundPoints.map(p => p.z)
+
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minZ = Math.min(...zs)
+    const maxZ = Math.max(...zs)
+
+    return {
+        left: minX,
+        right: maxX,
+        top: maxZ,
+        bottom: minZ,
+        width: maxX - minX,
+        depth: maxZ - minZ
+    }
+}
+
+function createBoundaryWallsFromGroundBounds(bounds) {
+    const wallThickness = 1
+    const wallHeight = 2
+    const boundaryMaterial = new CANNON.Material()
+
+    const positions = [
+        { x: bounds.left - wallThickness / 2, z: (bounds.top + bounds.bottom) / 2 }, // Left
+        { x: bounds.right + wallThickness / 2, z: (bounds.top + bounds.bottom) / 2 }, // Right
+        { x: (bounds.left + bounds.right) / 2, z: bounds.bottom - wallThickness / 2 }, // Bottom
+        { x: (bounds.left + bounds.right) / 2, z: bounds.top + wallThickness / 2 }     // Top
+    ]
+
+    const sizes = [
+        [wallThickness, wallHeight, bounds.depth + wallThickness], // Left
+        [wallThickness, wallHeight, bounds.depth + wallThickness], // Right
+        [bounds.width + wallThickness, wallHeight, wallThickness], // Bottom
+        [bounds.width + wallThickness, wallHeight, wallThickness]  // Top
+    ]
+
+    for (let i = 0; i < 4; i++) {
+        const shape = new CANNON.Box(new CANNON.Vec3(...sizes[i].map(s => s / 2)))
+        const body = new CANNON.Body({
+            mass: 0,
+            shape,
+            material: boundaryMaterial,
+            position: new CANNON.Vec3(positions[i].x, wallHeight / 2, positions[i].z)
+        })
+        world.addBody(body)
+        fenceBodies.push(body)
+    }
+
+}
+
+// function createVisualFencesFromGroundBounds(bounds) {
+//     const wallThickness = 1
+//     const wallHeight = 1
+//     const material = new THREE.MeshStandardMaterial({
+//         color: 0x226622,
+//         roughness: 1,
+//         metalness: 0
+//     })
+
+//     const positions = [
+//         { x: bounds.left - wallThickness / 2, z: (bounds.top + bounds.bottom) / 2 }, // Left
+//         { x: bounds.right + wallThickness / 2, z: (bounds.top + bounds.bottom) / 2 }, // Right
+//         { x: (bounds.left + bounds.right) / 2, z: bounds.bottom - wallThickness / 2 }, // Bottom
+//         { x: (bounds.left + bounds.right) / 2, z: bounds.top + wallThickness / 2 }     // Top
+//     ]
+
+//     const geometries = [
+//         new THREE.BoxGeometry(wallThickness, wallHeight, bounds.depth + wallThickness), // Left
+//         new THREE.BoxGeometry(wallThickness, wallHeight, bounds.depth + wallThickness), // Right
+//         new THREE.BoxGeometry(bounds.width + wallThickness, wallHeight, wallThickness), // Bottom
+//         new THREE.BoxGeometry(bounds.width + wallThickness, wallHeight, wallThickness)  // Top
+//     ]
+
+//     for (let i = 0; i < 4; i++) {
+//         const mesh = new THREE.Mesh(geometries[i], material)
+//         mesh.position.set(positions[i].x, wallHeight / 2, positions[i].z)
+//         scene.add(mesh)
+//         fenceMeshes.push(mesh)
+//     }
+
+// }
+
+
+
+
 // Posicionar en ángulo isométrico
 camera.position.set(0, 6, 10) // más baja y más de lado
 camera.lookAt(0, 0, 0)
 
 scene.add(camera)
+
+
+
+
+
+
+
+
 
 
 
@@ -386,6 +504,21 @@ audioLoader.load('/sounds/fondo.mp3', function (buffer) {
     backgroundSound.setVolume(0.5)
 })
 
+// barreras del mundo
+function rebuildFences(camera) {
+    // Remove old physical walls
+    fenceBodies.forEach(body => world.removeBody(body))
+    fenceBodies.length = 0
+
+    // Remove old visual meshes
+    //fenceMeshes.forEach(mesh => scene.remove(mesh))
+    //fenceMeshes.length = 0
+
+    // Create new ones
+    const bounds = getGroundViewBounds(camera)
+    createBoundaryWallsFromGroundBounds(bounds)
+    //createVisualFencesFromGroundBounds(bounds)
+}
 
 
 // crear sombra false para peces
@@ -426,7 +559,7 @@ composer.addPass(renderPass)
 const pixelPass = new ShaderPass(PixelShader)
 pixelPass.uniforms['resolution'].value = new THREE.Vector2(window.innerWidth, window.innerHeight)
 pixelPass.uniforms['resolution'].value.multiplyScalar(window.devicePixelRatio)
-pixelPass.uniforms['pixelSize'].value = 3 
+pixelPass.uniforms['pixelSize'].value = 2 
 
 
 composer.addPass(pixelPass)
@@ -634,7 +767,9 @@ const keysPressed = {
     KeyW: false,
     KeyA: false,
     KeyS: false,
-    KeyD: false
+    KeyD: false,
+    Space: false,      // Player 1 run
+    ShiftLeft: false  
 }
 
 window.addEventListener('keydown', (e) => {
@@ -702,8 +837,10 @@ const tick = () => {
     // 2. NUEVO movimiento del gato (reemplaza tu lógica anterior)
     
     if (catBoxBody && catGroup1) {
-        const moveSpeed = 7
-        const inputVector = new THREE.Vector3()
+        const baseSpeed = 8
+        const runSpeed = 12
+        const moveSpeed = keysPressed.Space ? runSpeed : baseSpeed
+                const inputVector = new THREE.Vector3()
     
         if (keysPressed.ArrowUp) inputVector.z -= 1
         if (keysPressed.ArrowDown) inputVector.z += 1
@@ -744,8 +881,11 @@ const tick = () => {
 // Agregar segundo gato 
 
 if (catBoxBody2 && catGroup2) {
-    const moveSpeed = 7
-    const inputVector = new THREE.Vector3()
+    const baseSpeed = 8
+const runSpeed = 12
+const moveSpeed = keysPressed.ShiftLeft ? runSpeed : baseSpeed
+
+        const inputVector = new THREE.Vector3()
 
     if (keysPressed.KeyW) inputVector.z -= 1
     if (keysPressed.KeyS) inputVector.z += 1
@@ -877,6 +1017,10 @@ if (catGroup2 && statusShadowCat2 && catBoxBody2) {
     // 4. Render y update
     controls.update()
     composer.render()
+    rebuildFences(camera)
+    window.__fencesCreated = true
+    
+    
     //renderer.render(scene, camera) 
   
 
