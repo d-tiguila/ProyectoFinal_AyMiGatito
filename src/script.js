@@ -178,12 +178,12 @@ function updateStatusShadow(catGroup, shadow, catBody) {
                 const popupPos = new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z)
                 createScorePopup('+1', popupPos)
     
-                console.log('Cat 1 score:', scoreCat1)
+                //console.log('Cat 1 score:', scoreCat1)
             } else if (catBody === catBoxBody2) {
                 scoreCat2++
                 const popupPos = new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z)
                 createScorePopup('+1', popupPos)
-                console.log('Cat 2 score:', scoreCat2)
+                //console.log('Cat 2 score:', scoreCat2)
             }
         
             // Remove fish
@@ -837,7 +837,7 @@ const tick = () => {
     // 2. NUEVO movimiento del gato (reemplaza tu lógica anterior)
     
     if (catBoxBody && catGroup1) {
-        const baseSpeed = 8
+        const baseSpeed = 7
         const runSpeed = 12
         const moveSpeed = keysPressed.Space ? runSpeed : baseSpeed
                 const inputVector = new THREE.Vector3()
@@ -881,7 +881,7 @@ const tick = () => {
 // Agregar segundo gato 
 
 if (catBoxBody2 && catGroup2) {
-    const baseSpeed = 8
+    const baseSpeed = 7
 const runSpeed = 12
 const moveSpeed = keysPressed.ShiftLeft ? runSpeed : baseSpeed
 
@@ -1030,9 +1030,9 @@ if (catGroup2 && statusShadowCat2 && catBoxBody2) {
 
     const info = renderer.info
 
-    console.log(`🧱 Geometries: ${info.memory.geometries}`)
-    console.log(`🎨 Textures: ${info.memory.textures}`)
-    console.log(`🔺 Triangles: ${info.render.triangles}`)
+    //console.log(`🧱 Geometries: ${info.memory.geometries}`)
+    //console.log(`🎨 Textures: ${info.memory.textures}`)
+    //console.log(`🔺 Triangles: ${info.render.triangles}`)
     
 
     requestAnimationFrame(tick)
@@ -1107,7 +1107,7 @@ function endGame() {
     const volumeDisplay = document.getElementById('volumeDisplay')
     volumeDisplay.textContent = `Volume: ${(newVolume * 100).toFixed(0)}%`
 
-    console.log('🔊 Volume:', newVolume.toFixed(2))
+    //console.log('🔊 Volume:', newVolume.toFixed(2))
 })
 
   
