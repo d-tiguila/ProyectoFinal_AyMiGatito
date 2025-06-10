@@ -12,6 +12,7 @@
     "vite-plugin-restart": "^0.4.2"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^1.2.0",
     "cannon": "^0.6.2",
     "gsap": "^3.13.0",
     "lil-gui": "^0.20.0",
