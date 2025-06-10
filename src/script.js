@@ -89,20 +89,30 @@ function isFishOnCatchTrajectory(fishBody, catBody) {
 
     if (velocity.y >= -0.1) return false // Not falling
 
-    // 🟡 Compute actual floor center in world space (including rotation)
+    // Get bounding height depending on shape type
+    const shape = fishBody.shapes[0]
+    let heightOffset = 0
+
+    if (shape instanceof CANNON.Box) {
+        heightOffset = shape.halfExtents.y
+    } else if (shape instanceof CANNON.Sphere) {
+        heightOffset = shape.radius
+    } else {
+        console.warn('Unknown shape type in trajectory check')
+        return false
+    }
+
     const floorCenter = new CANNON.Vec3()
     catBody.pointToWorldFrame(new CANNON.Vec3(0, 0, 1.08), floorCenter)
 
-    const dy = (position.y - fishBody.shapes[0].halfExtents.y) - floorCenter.y
+    const dy = (position.y - heightOffset) - floorCenter.y
     const timeToImpact = dy / -velocity.y
 
-    if (timeToImpact < 0 || timeToImpact > 3) return false // too far or already past
+    if (timeToImpact < 0 || timeToImpact > 3) return false
 
-    // Projected fish position
     const projectedX = position.x + velocity.x * timeToImpact
     const projectedZ = position.z + velocity.z * timeToImpact
 
-    // Dimensions of the floor box
     const halfWidth = 0.4
     const halfDepth = 0.665
 
@@ -111,6 +121,7 @@ function isFishOnCatchTrajectory(fishBody, catBody) {
 
     return withinX && withinZ
 }
+
 
 
 // score pop up
@@ -168,31 +179,38 @@ function updateStatusShadow(catGroup, shadow, catBody) {
             isFishOnCatchTrajectory(body, catBody) &&
             isCannonContact(body, catBody)
         ) {
-         
-            // 🐟 Fish caught!
             collided = true
             shadow.lastCatchTime = performance.now()
         
-            if (catBody === catBoxBody) {
-                scoreCat1++
-                const popupPos = new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z)
-                createScorePopup('+1', popupPos)
-    
-                //console.log('Cat 1 score:', scoreCat1)
-            } else if (catBody === catBoxBody2) {
-                scoreCat2++
-                const popupPos = new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z)
-                createScorePopup('+1', popupPos)
-                //console.log('Cat 2 score:', scoreCat2)
+            if (body.isBomb) {
+                // 💣 Player caught a bomb
+                if (catBody === catBoxBody) {
+                    scoreCat1 = 0
+                } else if (catBody === catBoxBody2) {
+                    scoreCat2 = 0
+                }
+        
+                createScorePopup('💣 Boom!', new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z))
+                console.log('💥 Bomb caught — score reset!')
+            } else {
+                // 🐟 Normal fish caught
+                if (catBody === catBoxBody) {
+                    scoreCat1++
+                    createScorePopup('+1', new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z))
+                } else if (catBody === catBoxBody2) {
+                    scoreCat2++
+                    createScorePopup('+1', new THREE.Vector3(catBody.position.x, catBody.position.y + 1.2, catBody.position.z))
+                }
             }
         
-            // Remove fish
+            // Remove the fish or bomb
             scene.remove(entry.mesh)
             scene.remove(entry.fakeShadow)
             world.removeBody(entry.body)
             objectsToUpdate.splice(i, 1)
             break
         }
+        
         
 
         if (isFishOnCatchTrajectory(body, catBody)) {
@@ -321,7 +339,6 @@ window.addEventListener('resize', () => {
     camera.top = zoom / 2
     camera.bottom = -zoom / 2
     camera.updateProjectionMatrix()
-    rebuildFences(camera)
 
 
     renderer.setSize(sizes.width, sizes.height)
@@ -593,17 +610,26 @@ const boxMaterial = new THREE.MeshStandardMaterial({
   })
   
 // peces callendo 
-function createBox(width, height, depth, position) {
+function createBox(width, height, depth, position, isBomb = false) {
     if (!fishGLTF) return // Wait until model is loaded
 
     // 1. Clone the fish model
     const fishMesh = fishGLTF.clone(true)
     fishMesh.traverse(child => {
         if (child.isMesh) {
-            child.castShadow = true
-            child.receiveShadow = true
+            if (isBomb) {
+                // Only override material if it's a bomb
+                child.material = new THREE.MeshStandardMaterial({
+                    color: 0x000000,
+                    roughness: 1,
+                    metalness: 0
+                })
+            }
+            // Otherwise, keep the original material (do nothing)
         }
     })
+    
+    
 
     // 2. Scale and position the fish
     fishMesh.scale.set(width*3, height*1.5, depth*7)
@@ -621,6 +647,9 @@ function createBox(width, height, depth, position) {
         material: defaultMaterial
     })
 
+    body.isBomb = isBomb // ✅ Set bomb flag here
+
+
     world.addBody(body)
 
     const fakeShadow = createFakeShadow(position)
@@ -637,6 +666,8 @@ fishLoader.load('/Models/pez.glb', (gltf) => {
     fishGLTF = gltf.scene
 })
 
+
+// bomba 
 
 
 
@@ -1040,11 +1071,14 @@ if (catGroup2 && statusShadowCat2 && catBoxBody2) {
 
 function startRandomBoxSpawner() {
     function spawnBox() {
-        createBox(0.2, 0.4, 0.1, {
-            x: (Math.random() - 0.5) * 9,
-            y: 15,
-            z: (Math.random() - 0.5) * 9
-        })
+        const isBomb = Math.random() < 0.15
+createBox(0.2, 0.4, 0.1, {
+    x: (Math.random() - 0.5) * 9,
+    y: 15,
+    z: (Math.random() - 0.5) * 9
+}, isBomb)
+
+        
 
         // Schedule next spawn
         const nextDelay = Math.random() * 800 + 800 // 1000–3000 ms
